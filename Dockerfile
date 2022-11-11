@@ -1,9 +1,7 @@
 # Dockerfile used to create the MTA CLI used in this exercise
 # https://quay.io/repository/rhappsvcs/spring-to-quarkus-mta-cli?tab=tags
 #
-# docker buildx build -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:5.3.0.Final --platform linux/amd64,linux/arm64 --push .
-# docker tag quay.io/rhappsvcs/spring-to-quarkus-mta-cli:5.3.0.Final quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest
-# docker push quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest
+# docker buildx build -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:5.3.0.Final -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest --platform linux/amd64,linux/arm64 --push .
 FROM registry.access.redhat.com/ubi9:latest AS builder
 
 ENV MTA_BASE_DIR="/opt/mta"
