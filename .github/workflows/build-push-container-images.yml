@@ -13,96 +13,91 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build-images:
+  build-push-images:
     if: (github.event_name == 'workflow_dispatch') && (github.repository == 'RedHat-Middleware-Workshops/spring-to-quarkus-mta-cli')
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch:
-          - amd64
-          - arm64
     steps:
       - name: Set up QEMU
-        if: matrix.arch == 'arm64'
         uses: docker/setup-qemu-action@v2
         with:
-          platforms: ${{ matrix.arch }}
+          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           install: true
 
-      - name: Build image (${{ matrix.arch }})
+      - name: Login to quay
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_REPO_USERNAME }}
+          password: ${{ secrets.QUAY_REPO_TOKEN }}
+
+      - name: Build images
         uses: docker/build-push-action@v3
         with:
-          platforms: linux/${{ matrix.arch }}
-          push: false
-          load: true
-          tags: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-${{ matrix.arch }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          load: false
+          tags: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}
 
-      - name: Save image (${{ matrix.arch }})
-        uses: ishworkh/docker-image-artifact-upload@v1
-        with:
-          image: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-${{ matrix.arch }}
+  # push-image:
+  #   if: (github.event_name == 'workflow_dispatch') && (github.repository == 'RedHat-Middleware-Workshops/spring-to-quarkus-mta-cli')
+  #   needs: build-images
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       arch:
+  #         - amd64
+  #         - arm64
+  #   steps:
+  #     - name: Get saved image (${{ matrix.arch }})
+  #       uses: ishworkh/docker-image-artifact-download@v1
+  #       with:
+  #         image: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-${{ matrix.arch }}
 
-  push-images:
-    if: (github.event_name == 'workflow_dispatch') && (github.repository == 'RedHat-Middleware-Workshops/spring-to-quarkus-mta-cli')
-    needs: build-images
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch:
-          - amd64
-          - arm64
-    steps:
-      - name: Get saved image (${{ matrix.arch }})
-        uses: ishworkh/docker-image-artifact-download@v1
-        with:
-          image: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-${{ matrix.arch }}
+  #     - name: Login to quay
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: quay.io
+  #         username: ${{ secrets.QUAY_REPO_USERNAME }}
+  #         password: ${{ secrets.QUAY_REPO_TOKEN }}
 
-      - name: Login to quay
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_REPO_USERNAME }}
-          password: ${{ secrets.QUAY_REPO_TOKEN }}
+  #     - name: Push image (${{ matrix.arch }})
+  #       shell: bash
+  #       run: docker push ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-${{ matrix.arch }}
 
-      - name: Push image (${{ matrix.arch }})
-        shell: bash
-        run: docker push ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-${{ matrix.arch }}
+  # create-multiarch-manifest:
+  #   if: (github.event_name == 'workflow_dispatch') && (github.repository == 'RedHat-Middleware-Workshops/spring-to-quarkus-mta-cli')
+  #   needs: push-images
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Login to quay
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: quay.io
+  #         username: ${{ secrets.QUAY_REPO_USERNAME }}
+  #         password: ${{ secrets.QUAY_REPO_TOKEN }}
 
-  create-multiarch-manifests:
-    if: (github.event_name == 'workflow_dispatch') && (github.repository == 'RedHat-Middleware-Workshops/spring-to-quarkus-mta-cli')
-    needs: push-images
-    runs-on: ubuntu-latest
-    steps:
-      - name: Login to quay
-        uses: docker/login-action@v2
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_REPO_USERNAME }}
-          password: ${{ secrets.QUAY_REPO_TOKEN }}
+  #     - name: Create and push multi-arch manifests
+  #       shell: bash
+  #       run: |
+  #         docker manifest create ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }} \
+  #           -a ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-amd64 \
+  #           -a ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-arm64
+  #         docker manifest push ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}
+  #         docker tag ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }} ${{ env.IMAGE_BASE_NAME }}:${{ env.LATEST_IMAGE_TAG }}
+  #         docker push ${{ env.IMAGE_BASE_NAME }}:${{ env.LATEST_IMAGE_TAG }}
 
-      - name: Create and push multi-arch manifests
-        shell: bash
-        run: |
-          docker manifest create ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }} \
-            -a ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-amd64 \
-            -a ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}-arm64
-          docker manifest push ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}
-          docker tag ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }} ${{ env.IMAGE_BASE_NAME }}:${{ env.LATEST_IMAGE_TAG }}
-          docker push ${{ env.IMAGE_BASE_NAME }}:${{ env.LATEST_IMAGE_TAG }}
-
-  cleanup-artifacts:
-    needs: create-multiarch-manifests
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Delete artifacts
-        env: 
-          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
-        run: |
-          echo "::add-mask::$WEBHOOK_SECRET"
-          curl --verbose --fail --show-error --location --request POST "https://api.github.com/repos/$GITHUB_REPOSITORY/dispatches" --header "Authorization: token $WEBHOOK_SECRET" --header 'Content-Type: application/json' --header 'Accept: application/vnd.github.everest-preview+json' --data-raw "{ \"event_type\": \"delete_all_artifacts\", \"client_payload\": {\"parent_runid\": \"$GITHUB_RUN_ID\", \"parent_repo\": \"$GITHUB_REPOSITORY\"} }"
-          
+  # cleanup-artifacts:
+  #   needs: create-multiarch-manifests
+  #   if: always()
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Delete artifacts
+  #       env: 
+  #         WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+  #       run: |
+  #         echo "::add-mask::$WEBHOOK_SECRET"
+  #         curl --verbose --fail --show-error --location --request POST "https://api.github.com/repos/$GITHUB_REPOSITORY/dispatches" --header "Authorization: token $WEBHOOK_SECRET" --header 'Content-Type: application/json' --header 'Accept: application/vnd.github.everest-preview+json' --data-raw "{ \"event_type\": \"delete_all_artifacts\", \"client_payload\": {\"parent_runid\": \"$GITHUB_RUN_ID\", \"parent_repo\": \"$GITHUB_REPOSITORY\"} }"
