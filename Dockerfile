@@ -1,36 +1,38 @@
 # Dockerfile used to create the MTA CLI used in this exercise
 # https://quay.io/repository/rhappsvcs/spring-to-quarkus-mta-cli?tab=tags
 #
-# docker buildx build -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:5.3.0.Final -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest --platform linux/amd64,linux/arm64 --push .
-FROM registry.access.redhat.com/ubi9:latest AS builder
+# docker buildx build -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:6.1.0.Final -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest --platform linux/amd64,linux/arm64 --push .
+FROM registry.access.redhat.com/ubi9-minimal:9.1.0 AS builder
 
-ENV MTA_BASE_DIR="/opt/mta"
-ENV MTA_VERSION="5.3.0.Final"
-ENV MTA_NAME="mta-cli-${MTA_VERSION}"
+ENV WINDUP_BASE_DIR="/opt/windup"
+ENV WINDUP_VERSION="6.1.0.Final"
+ENV WINDUP_NAME="tackle-cli"
+ENV WINDUP_NAME_VERSION="${WINDUP_NAME}-${WINDUP_VERSION}"
 
-RUN dnf install -y unzip
+RUN microdnf install -y unzip
 
-RUN mkdir -p ${MTA_BASE_DIR} && \
-    cd ${MTA_BASE_DIR} && \
-    curl -L -O https://repo1.maven.org/maven2/org/jboss/windup/mta-cli/${MTA_VERSION}/${MTA_NAME}-offline.zip && \
-    unzip ${MTA_NAME}-offline.zip && \
-    rm ${MTA_NAME}-offline.zip
+RUN mkdir -p ${WINDUP_BASE_DIR} && \
+    cd ${WINDUP_BASE_DIR} && \
+    curl -L -O https://repo1.maven.org/maven2/org/jboss/windup/${WINDUP_NAME}/${WINDUP_VERSION}/${WINDUP_NAME_VERSION}-offline.zip && \
+    unzip ${WINDUP_NAME_VERSION}-offline.zip && \
+    rm ${WINDUP_NAME_VERSION}-offline.zip
 
-FROM registry.access.redhat.com/ubi9/openjdk-11-runtime:latest
+FROM registry.access.redhat.com/ubi9/openjdk-11-runtime:1.13
 
-ENV MTA_BASE_DIR="/opt/mta"
-ENV MTA_VERSION="5.3.0.Final"
-ENV MTA_NAME="mta-cli-${MTA_VERSION}"
+ENV WINDUP_BASE_DIR="/opt/windup"
+ENV WINDUP_VERSION="6.1.0.Final"
+ENV ARTIFACT_NAME="tackle-cli"
+ENV WINDUP_NAME="windup-cli"
 ENV PROJECT_DIR="/opt/project"
-ENV OUTPUT_DIR="mta-report"
-ENV MTA_HOME="${MTA_BASE_DIR}/${MTA_NAME}"
+ENV OUTPUT_DIR="windup-report"
+ENV WINDUP_HOME="${WINDUP_BASE_DIR}/${ARTIFACT_NAME}-${WINDUP_VERSION}"
 ENV PACKAGE_NAME="com.acme"
 
 VOLUME [${PROJECT_DIR}]
 
 USER root
 
-COPY --from=builder ${MTA_BASE_DIR} ${MTA_BASE_DIR}
+COPY --from=builder ${WINDUP_BASE_DIR} ${WINDUP_BASE_DIR}
 
 RUN chown -R default:0 /opt && \
     chmod -R a+rwx /opt
@@ -42,5 +44,5 @@ RUN mkdir -p $HOME/.mta/ignore && \
 
 WORKDIR ${PROJECT_DIR}
 
-CMD ${MTA_HOME}/bin/mta-cli --sourceMode --input . --output ${OUTPUT_DIR} --target quarkus --packages ${PACKAGE_NAME} --overwrite --explodedApp
+CMD ${WINDUP_HOME}/bin/${WINDUP_NAME} --sourceMode --input . --output ${OUTPUT_DIR} --target quarkus --packages ${PACKAGE_NAME} --overwrite --explodedApp
 

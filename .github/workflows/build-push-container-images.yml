@@ -2,7 +2,7 @@ name: Build and Push Container images
 
 env:
   IMAGE_BASE_NAME: quay.io/rhappsvcs/spring-to-quarkus-mta-cli
-  MTA_VERSION: 5.3.0.Final
+  MTA_VERSION: 6.1.0.Final
   LATEST_IMAGE_TAG: latest
 
 on:
