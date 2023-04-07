@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_latest:
-        description: Whether to tag the build image as "latest"
+        description: Tag as "latest"?
         required: false
         type: boolean
   
