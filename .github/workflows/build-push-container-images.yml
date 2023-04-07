@@ -40,5 +40,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           load: false
-	  tags: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}
+          tags: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }}
           #tags: ${{ env.IMAGE_BASE_NAME }}:${{ env.MTA_VERSION }},${{ env.IMAGE_BASE_NAME }}:${{ env.LATEST_IMAGE_TAG }}
