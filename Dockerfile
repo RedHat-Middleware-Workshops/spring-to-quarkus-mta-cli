@@ -2,10 +2,10 @@
 # https://quay.io/repository/rhappsvcs/spring-to-quarkus-mta-cli?tab=tags
 #
 # docker buildx build -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:6.1.7.Final -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest --platform linux/amd64,linux/arm64 --push .
-FROM registry.access.redhat.com/ubi9-minimal:9.1.0 AS builder
+FROM registry.access.redhat.com/ubi9-minimal:9.2 AS builder
 
 ENV WINDUP_BASE_DIR="/opt/windup"
-ENV WINDUP_VERSION="6.1.7.Final"
+ENV WINDUP_VERSION="6.2.4.Final"
 ENV WINDUP_NAME="tackle-cli"
 ENV WINDUP_NAME_VERSION="${WINDUP_NAME}-${WINDUP_VERSION}"
 
@@ -20,7 +20,7 @@ RUN mkdir -p ${WINDUP_BASE_DIR} && \
 FROM registry.access.redhat.com/ubi9/openjdk-11-runtime:1.14
 
 ENV WINDUP_BASE_DIR="/opt/windup"
-ENV WINDUP_VERSION="6.1.7.Final"
+ENV WINDUP_VERSION="6.2.4.Final"
 ENV ARTIFACT_NAME="tackle-cli"
 ENV WINDUP_NAME="windup-cli"
 ENV PROJECT_DIR="/opt/project"
