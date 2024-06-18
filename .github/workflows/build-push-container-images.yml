@@ -47,7 +47,7 @@ jobs:
         run: echo "CONTAINER_TAGS=${{ env.CONTAINER_TAGS }},${{ env.IMAGE_BASE_NAME }}:${{ env.LATEST_IMAGE_TAG }}" >> $GITHUB_ENV
 
       - name: Build and push images
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm64
           push: true
