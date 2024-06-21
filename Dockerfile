@@ -1,11 +1,11 @@
 # Dockerfile used to create the MTA CLI used in this exercise
 # https://quay.io/repository/rhappsvcs/spring-to-quarkus-mta-cli?tab=tags
 #
-# docker buildx build -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:6.3.6.Final -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest --platform linux/amd64,linux/arm64 --push .
-FROM registry.access.redhat.com/ubi9-minimal:9.2 AS builder
+# docker buildx build -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:6.3.8.Final -t quay.io/rhappsvcs/spring-to-quarkus-mta-cli:latest --platform linux/amd64,linux/arm64 --push .
+FROM registry.access.redhat.com/ubi9-minimal:9.4 AS builder
 
 ENV WINDUP_BASE_DIR="/opt/windup"
-ENV WINDUP_VERSION="6.3.6.Final"
+ENV WINDUP_VERSION="6.3.8.Final"
 ENV WINDUP_NAME="tackle-cli"
 ENV WINDUP_NAME_VERSION="${WINDUP_NAME}-${WINDUP_VERSION}"
 
@@ -17,10 +17,10 @@ RUN mkdir -p ${WINDUP_BASE_DIR} && \
     unzip ${WINDUP_NAME_VERSION}-offline.zip && \
     rm ${WINDUP_NAME_VERSION}-offline.zip
 
-FROM registry.access.redhat.com/ubi9/openjdk-17-runtime:1.17
+FROM registry.access.redhat.com/ubi9/openjdk-17-runtime:1.20
 
 ENV WINDUP_BASE_DIR="/opt/windup"
-ENV WINDUP_VERSION="6.3.6.Final"
+ENV WINDUP_VERSION="6.3.8.Final"
 ENV ARTIFACT_NAME="tackle-cli"
 ENV WINDUP_NAME="windup-cli"
 ENV PROJECT_DIR="/opt/project"
